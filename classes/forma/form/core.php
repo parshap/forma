@@ -6,6 +6,17 @@ abstract class Forma_Form_Core
 	 * @var array List of fields the form has.
 	 */
 	private $_fields = array();
+	
+	/**
+	 * @var string The HTTP method to use with teh form.
+	 */
+	public $method = 'POST';
+
+	/**
+	 * @var string The URI to use for the form's action.
+	 */
+	public $action = '';
+
 
 	public function __construct($values = array())
 	{
