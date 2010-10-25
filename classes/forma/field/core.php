@@ -8,7 +8,7 @@ abstract class Forma_Field_Core
 	public $name;
 
 	/**
-	 * @var string The current value of the field.
+	 * @var string The string representation of the field's current value.
 	 */
 	public $value;
 	
@@ -70,11 +70,22 @@ abstract class Forma_Field_Core
 	}
 
 	/**
-	 * Gets the field's value processed according to teh field's standards.
+	 * Returns the field's value
+	 * @return mixed
 	 */
-	public function value()
+	public function get()
 	{
 		return $this->value;
+	}
+
+	/**
+	 * Sets the field's value and returns it.
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public function set($value)
+	{
+		return $this->value = $value;
 	}
 
 	public function render()
