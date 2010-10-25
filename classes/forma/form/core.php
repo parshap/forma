@@ -12,7 +12,7 @@ abstract class Forma_Form_Core
 	 */
 	public $action = null;
 
-	public $attributes = array();
+	public $attributes = array('class' => 'forma');
 
 	public $errors = array();
 
@@ -171,6 +171,7 @@ abstract class Forma_Form_Core
 			array('', ''),
 			strtolower($class_name)
 		);
+
 		$view_file = 'forma/form/' . $view_name;
 
 		// If we can't find the view file, use the parent's.

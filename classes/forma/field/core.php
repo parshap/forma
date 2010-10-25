@@ -32,6 +32,11 @@ abstract class Forma_Field_Core
 	 */
 	public $rules = array();
 
+	/**
+	 * @var bool A field is invalid if it has failed to pass validation.
+	 */
+	public $is_invalid = false;
+
 	public $attributes = array(
 		'id' => NULL,
 	);
@@ -98,10 +103,10 @@ abstract class Forma_Field_Core
 		// Create a local Validate object and perform validation.
 		$validate = Validate::factory(Arr::extract($data, array($this->name)));
 		$validate->rules($this->name, $this->rules);
-		$check = $validate->check();
+		$this->is_invalid = ! $validate->check();
 
 		printf("%s rules: %s<br />", $this->name, print_r($this->rules, true));
-		printf("checking %s against %s: %s<br />", $this->name, print_r($validate->as_array(), true), $check);
+		printf("checking %s against %s: %s<br />", $this->name, print_r($validate->as_array(), true), ! $this->is_invalid);
 
 		// Add any errors to the form's validate object.
 		foreach($validate->errors() as $field => $value)
@@ -111,33 +116,52 @@ abstract class Forma_Field_Core
 			printf("%s failed: %s<br />", $field, $error);
 		}
 
-		return $check;
+		return ! $this->is_invalid;
 	}
 
 	public function render()
 	{
-		$view_file = $this->get_view_file();
+		$file = Forma_Field::get_view_file('field', get_class($this));
 
-		return View::factory($view_file, array('field' => $this));
+		return View::factory($file, array(
+			'field' => $this,
+			'label' => $this->render_label(),
+			'input' => $this->render_input(),
+		));
 	}
 
-	protected function get_view_file($class_name = NULL)
+	public function render_label()
 	{
-		if($class_name === NULL)
+		$file = Forma_Field::get_view_file('label', get_class($this));
+
+		return View::factory($file, array('field' => $this));
+	}
+
+	public function render_input()
+	{
+		$file = Forma_Field::get_view_file('input', get_class($this));
+
+		return View::factory($file, array('field' => $this));
+	}
+
+	protected static function get_view_file($name, $class_name, $directory = 'forma/field')
+	{
+		$path = $directory;
+		$subdir = str_replace('forma_field_', '', strtolower($class_name));
+
+		if( ! empty($subdir) && $subdir !== 'core')
 		{
-			$class_name = get_class($this);
+			$path .= '/' . $subdir;
 		}
 
-		$view_name = str_replace('forma_field_', '', strtolower($class_name));
-		$view_file = 'forma/field/' . $view_name;
+		$path .= '/' . $name;
 
 		// If we can't find the view file, use the parent's.
-		if ( ! Kohana::find_file('views', $view_file) && $class_name !== __CLASS__)
+		if ( ! Kohana::find_file('views', $path) && $class_name !== __CLASS__)
 		{
-			return $this->get_view_file(get_parent_class($class_name));
+			return Forma_Field::get_view_file($name, get_parent_class($class_name), $directory);
 		}
 
-		return $view_file;
+		return $path;
 	}
-
 }

@@ -1,0 +1,1 @@
+<?php echo Form::label($field->attributes['id'], __($field->label)) ?>
