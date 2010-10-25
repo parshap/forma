@@ -62,6 +62,11 @@ abstract class Forma_Field_Core
 		{
 			$this->attributes['id'] = Forma::uniqid();
 		}
+
+		if ($this->required)
+		{
+			$this->rules += array('not_empty' => NULL);
+		}
 	}
 
 	/**

@@ -14,6 +14,8 @@ abstract class Forma_Form_Core
 
 	public $attributes = array();
 
+	public $errors = array();
+
 	public function __construct($values = array())
 	{
 		call_user_func(array(get_class($this), 'initialize'), $this);
@@ -105,6 +107,28 @@ abstract class Forma_Form_Core
 
 			$this->_saved = false;
 		}
+	}
+
+	/**
+	 * Validates the current state of the form.
+	 */
+	public function check()
+	{
+		$data = Validate::factory($this->_changed);
+
+		foreach ($this->fields() as $field)
+		{
+			$data->rules($field->name, $field->rules);
+			$data->label($field->name, $field->label);
+		}
+
+		$this->errors = array();
+
+		$check = $data->check();
+
+		$this->errors = $check ? array() : $data->errors('validate');
+
+		return $check;
 	}
 
 	public function render()
