@@ -3,6 +3,11 @@
 abstract class Forma_Field_Core
 {
 	/**
+	 * @var string The name of the field.
+	 */
+	public $name;
+
+	/**
 	 * @var string The current value of the field.
 	 */
 	public $value;
@@ -22,6 +27,11 @@ abstract class Forma_Field_Core
 	 */
 	public $depends = array();
 
+	/**
+	 * @var string The field's id.
+	 */
+	protected $id;
+
 	public function __construct($options = array())
 	{
 		foreach ($options as $name => $value)
@@ -33,9 +43,29 @@ abstract class Forma_Field_Core
 	/**
 	 * Gets the field's value processed according to teh field's standards.
 	 */
-	public function get()
+	public function value()
 	{
 		return $this->value;
+	}
+
+	/**
+	 * Returns the unique id attribute of this field.
+	 */
+	public function id()
+	{
+		if ( ! $this->id)
+		{
+			$this->id = Forma::uniqid();
+		}
+
+		return $this->id;
+	}
+
+	public function attributes()
+	{
+		return array(
+			'id' => $this->id(),
+		);
 	}
 
 	public function render($file = NULL)
