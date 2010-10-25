@@ -4,7 +4,7 @@ abstract class Forma_Core
 {
 	public static function factory($form, $values = array())
 	{
-		$class = 'forma_form_' . $form;
+		$class = 'form_' . $form;
 		return new $class($values);
 	}
 
