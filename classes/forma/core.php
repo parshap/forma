@@ -2,11 +2,9 @@
 
 abstract class Forma_Core
 {
-	protected static $_form_prefix = 'form_';
-
 	public static function factory($form, $values = array())
 	{
-		$class = Forma::$_form_prefix . $form;
+		$class = 'forma_form_' . $form;
 		return new $class($values);
 	}
 
