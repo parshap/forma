@@ -7,12 +7,4 @@ abstract class Forma_Core
 		$class = 'form_' . $form;
 		return new $class($values);
 	}
-
-	public static function class_name($form)
-	{
-	}
-
-	public static function form_name($form)
-	{
-	}
 }
