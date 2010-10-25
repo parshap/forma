@@ -7,7 +7,6 @@ abstract class Forma_Field_Email_Core extends Forma_Field_Text
 		parent::__construct($name, $options);
 
 		$this->attributes['type'] = 'email';
-
-		$this->rules += array('email' => NULL);
+		$this->rules += array('email' => null);
 	}
 }

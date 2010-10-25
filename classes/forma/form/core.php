@@ -65,6 +65,12 @@ abstract class Forma_Form_Core
 			foreach($param as $field)
 			{
 				$this->_fields[$field->name] = $field;
+
+				// If the field is a file upload, add the enctype attribute.
+				if(Arr::get($field->attributes, 'type') === 'file')
+				{
+					$this->attributes['enctype'] = 'multipart/form-data';
+				}
 			}
 
 			return $this;
