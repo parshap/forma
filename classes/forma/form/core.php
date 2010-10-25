@@ -8,21 +8,17 @@ abstract class Forma_Form_Core
 	private $_fields = array();
 	
 	/**
-	 * @var string The HTTP method to use with teh form.
-	 */
-	public $method = 'POST';
-
-	/**
 	 * @var string The URI to use for the form's action.
 	 */
-	public $action = '';
+	public $action = null;
 
+	public $attributes = array();
 
 	public function __construct($values = array())
 	{
 		call_user_func(array(get_class($this), 'initialize'), $this);
 
-		if($values)
+		if ($values)
 		{
 			$this->set($values);
 		}
@@ -32,10 +28,10 @@ abstract class Forma_Form_Core
 	 * Returns or sets field(s) of the form.
 	 * $form->fields() - returns all fields
 	 * $form->fields('password') - returns the field named password
-	 * $form->fields('password', $field_object) - sets the password field
-	 * $form->fields($array_of_field_objects) - sets each field
+	 * $form->fields($field_object) - adds the field
+	 * $form->fields($array_of_field_objects) - adds each field
 	 */
-	public function fields($param = null, $field = null)
+	public function fields($param = null)
 	{
 		// If no parameter was passed, return all of the form's fields.
 		// case: $form->fields()
@@ -47,9 +43,9 @@ abstract class Forma_Form_Core
 		// If the parameter is a Forma_Field object, we are adding that field.
 		// Put it in the array form we expect.
 		// case: $form->fields('password', $field_object)
-		else if (is_subclass_of($field, 'Forma_Field'))
+		else if (is_object($param) && is_subclass_of($param, 'Forma_Field'))
 		{
-			$param = array($param => $field);
+			$param = array($param->name => $param);
 		}
 
 		// If the parameter is a string, return the field with that name.
@@ -64,13 +60,11 @@ abstract class Forma_Form_Core
 		// case: $form->fields($array_of_field_objects)
 		if (is_array($param))
 		{
-			// Set the field's name.
-			foreach($param as $name => $field)
+			foreach($param as $field)
 			{
-				$field->name = $name;
+				$this->_fields[$field->name] = $field;
 			}
 
-			$this->_fields += $param;
 			return $this;
 		}
 
@@ -87,29 +81,59 @@ abstract class Forma_Form_Core
 		if ( ! is_array($values))
 		{
 			$values = array($values => $value);
-
-			foreach($values as $key => $value)
-			{
-				$field = $this->fields($key);
-
-				// If this is not a form field, skip it.
-				if ( ! $field)
-				{
-					continue;
-				}
-
-				$old_value = $field->value;
-				$value = $field->set($value);
-
-				if ($value === $old_value)
-				{
-					continue;
-				}
-
-				$this->_changed[$field->name] = $value;
-
-				$this->_saved = false;
-			}
 		}
+
+		foreach($values as $key => $value)
+		{
+			$field = $this->fields($key);
+
+			// If this is not a form field, skip it.
+			if ( ! $field)
+			{
+				continue;
+			}
+
+			$old_value = $field->value;
+			$field->value = $value;
+
+			if ($value === $old_value)
+			{
+				continue;
+			}
+
+			$this->_changed[$field->name] = $value;
+
+			$this->_saved = false;
+		}
+	}
+
+	public function render()
+	{
+		$view_file = $this->get_view_file();
+
+		return View::factory($view_file, array('form' => $this));
+	}
+
+	protected function get_view_file($class_name = NULL)
+	{
+		if($class_name === NULL)
+		{
+			$class_name = get_class($this);
+		}
+
+		$view_name = str_replace(
+			array('forma_', 'form_'),
+			array('', ''),
+			strtolower($class_name)
+		);
+		$view_file = 'forma/form/' . $view_name;
+
+		// If we can't find the view file, use the parent's.
+		if ( ! Kohana::find_file('views', $view_file) && $class_name !== __CLASS__)
+		{
+			return $this->get_view_file(get_parent_class($class_name));
+		}
+
+		return $view_file;
 	}
 }

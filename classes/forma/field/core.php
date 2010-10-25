@@ -28,15 +28,39 @@ abstract class Forma_Field_Core
 	public $depends = array();
 
 	/**
-	 * @var string The field's id.
+	 * @var array Validation rules for this field.
 	 */
-	protected $id;
+	public $rules = array();
 
-	public function __construct($options = array())
+	public $attributes = array(
+		'id' => NULL,
+	);
+
+	public $required = true;
+
+	/**
+	 * Creates and initializes the form field.
+	 */
+	public function __construct($name, $options = array())
 	{
+		$options['name'] = $name;
+
+		// Assign each option as object attributes.
 		foreach ($options as $name => $value)
 		{
 			$this->$name = $value;
+		}
+
+		// If no label was given, generate one from the name.
+		if ( ! $this->label)
+		{
+			$this->label = ucwords(preg_replace('/[\W_]+/', ' ', $this->name));
+		}
+
+		// If no ID was given, generate one.
+		if ( ! $this->attributes['id'] )
+		{
+			$this->attributes['id'] = Forma::uniqid();
 		}
 	}
 
@@ -48,27 +72,7 @@ abstract class Forma_Field_Core
 		return $this->value;
 	}
 
-	/**
-	 * Returns the unique id attribute of this field.
-	 */
-	public function id()
-	{
-		if ( ! $this->id)
-		{
-			$this->id = Forma::uniqid();
-		}
-
-		return $this->id;
-	}
-
-	public function attributes()
-	{
-		return array(
-			'id' => $this->id(),
-		);
-	}
-
-	public function render($file = NULL)
+	public function render()
 	{
 		$view_file = $this->get_view_file();
 
