@@ -16,6 +16,10 @@ abstract class Forma_Form_Core
 
 	public $errors = array();
 
+	private $_saved = true;
+
+	private $_changed = array();
+
 	public function __construct($values = array())
 	{
 		call_user_func(array(get_class($this), 'initialize'), $this);
@@ -93,7 +97,16 @@ abstract class Forma_Form_Core
 
 		foreach($values as $key => $value)
 		{
-			$field = $this->fields($key);
+			$keys = explode(',', $key);
+			$name = $keys[0];
+			$field = $this->fields($name);
+
+			// Wrap the value around an associate array based on the key.
+			// e.g., leader,name => array('name' => $value)
+			foreach(array_reverse(array_slice($keys, 1)) as $key)
+			{
+				$value = array($key => $value);
+			}
 
 			// If this is not a form field, skip it.
 			if ( ! $field)
@@ -101,15 +114,15 @@ abstract class Forma_Form_Core
 				continue;
 			}
 
-			$old_value = $field->value;
-			$field->value = $value;
+			$old_value = $field->get();
+			$new_value = $field->set($value);
 
-			if ($value === $old_value)
+			if ($old_value !== null && $new_value === $old_value)
 			{
 				continue;
 			}
 
-			$this->_changed[$field->name] = $value;
+			$this->_changed[$field->name] = $field->value;
 
 			$this->_saved = false;
 		}
@@ -120,17 +133,16 @@ abstract class Forma_Form_Core
 	 */
 	public function check()
 	{
+		$check = true;
 		$data = Validate::factory($this->_changed);
 
 		foreach ($this->fields() as $field)
 		{
-			$data->rules($field->name, $field->rules);
+			$check = $field->check($data) && $check;
 			$data->label($field->name, $field->label);
 		}
 
 		$this->errors = array();
-
-		$check = $data->check();
 
 		if ( ! $check)
 		{

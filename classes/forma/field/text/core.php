@@ -4,6 +4,6 @@ abstract class Forma_Field_Text_Core extends Forma_Field
 {
 	public function get()
 	{
-		return (string) $this->value;
+		return $this->value === null ? null : (string) $this->value;
 	}
 }

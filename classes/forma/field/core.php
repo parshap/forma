@@ -70,7 +70,11 @@ abstract class Forma_Field_Core
 	}
 
 	/**
-	 * Returns the field's value
+	 * Returns the field's value. This function should be able to return three
+	 * distinct values representing three states:
+	 *  null - to represent the field value being unset
+	 *  empty - a representation of this field's value being empty
+	 *  value - some representation of this field's value
 	 * @return mixed
 	 */
 	public function get()
@@ -85,7 +89,29 @@ abstract class Forma_Field_Core
 	 */
 	public function set($value)
 	{
-		return $this->value = $value;
+		$this->value = $value;
+		return $this->get();
+	}
+
+	public function check($data)
+	{
+		// Create a local Validate object and perform validation.
+		$validate = Validate::factory(Arr::extract($data, array($this->name)));
+		$validate->rules($this->name, $this->rules);
+		$check = $validate->check();
+
+		printf("%s rules: %s<br />", $this->name, print_r($this->rules, true));
+		printf("checking %s against %s: %s<br />", $this->name, print_r($validate->as_array(), true), $check);
+
+		// Add any errors to the form's validate object.
+		foreach($validate->errors() as $field => $value)
+		{
+			list($error, $params) = $value;
+			$data->error($field, $error, $params);
+			printf("%s failed: %s<br />", $field, $error);
+		}
+
+		return $check;
 	}
 
 	public function render()
