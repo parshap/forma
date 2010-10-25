@@ -126,7 +126,10 @@ abstract class Forma_Form_Core
 
 		$check = $data->check();
 
-		$this->errors = $check ? array() : $data->errors('validate');
+		if ( ! $check)
+		{
+			$this->errors = $data->errors('form/' . Forma::form_name($this));
+		}
 
 		return $check;
 	}
