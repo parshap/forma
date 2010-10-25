@@ -38,4 +38,30 @@ abstract class Forma_Field_Core
 		return $this->value;
 	}
 
+	public function render($file = NULL)
+	{
+		$view_file = $this->get_view_file();
+
+		return View::factory($view_file, array('field' => $this));
+	}
+
+	protected function get_view_file($class_name = NULL)
+	{
+		if($class_name === NULL)
+		{
+			$class_name = get_class($this);
+		}
+
+		$view_name = str_replace('forma_field_', '', strtolower($class_name));
+		$view_file = 'forma/field/' . $view_name;
+
+		// If we can't find the view file, use the parent's.
+		if ( ! Kohana::find_file('views', $view_file) && $class_name !== __CLASS__)
+		{
+			return $this->get_view_file(get_parent_class($class_name));
+		}
+
+		return $view_file;
+	}
+
 }
