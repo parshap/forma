@@ -38,10 +38,17 @@ abstract class Forma_Field_Core
 	public $is_invalid = false;
 
 	public $attributes = array(
-		'id' => NULL,
+		'id' => null,
 	);
 
 	public $required = true;
+
+	/*
+	 * @var mixed The limit of this field being repeated. Can be a number or
+	 * '+' for "1 or more".
+	 * @todo: implement '*', 'n+', 'n-'
+	 */
+	public $limit = 1;
 
 	/**
 	 * Creates and initializes the form field.
@@ -100,23 +107,68 @@ abstract class Forma_Field_Core
 
 	public function check($data)
 	{
+		// If there are no validation rules then we pass!
+		if( ! $this->rules)
+		{
+			return ! $this->is_invalid = false;
+		}
+
 		// Create a local Validate object and perform validation.
 		$validate = Validate::factory(Arr::extract($data, array($this->name)));
 		$validate->rules($this->name, $this->rules);
 		$this->is_invalid = ! $validate->check();
 
-		printf("%s rules: %s<br />", $this->name, print_r($this->rules, true));
-		printf("checking %s against %s: %s<br />", $this->name, print_r($validate->as_array(), true), ! $this->is_invalid);
 
 		// Add any errors to the form's validate object.
 		foreach($validate->errors() as $field => $value)
 		{
 			list($error, $params) = $value;
 			$data->error($field, $error, $params);
-			printf("%s failed: %s<br />", $field, $error);
 		}
 
 		return ! $this->is_invalid;
+	}
+
+	/**
+	 * Determines if this field meets its dependencies.
+	 * @return bool
+	 */
+	public function depends($values)
+	{
+		// If there are no dependencies, we've met them!
+		if ( ! $this->depends)
+		{
+			return true;
+		}
+
+		// If we fail any of our dependencies, return false.
+		foreach ($this->depends as $field => $regex)
+		{
+			// Special processing of "not empty" regex, ".+", so that it works
+			// on array values as well.
+			if ($regex === '.+')
+			{
+				if ( empty($values[$field]))
+				{
+					return false;
+				}
+			}
+
+			else if ( ! preg_match('/'.$regex.'/', $values[$field]))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Returns a representation of this field ready for json use.
+	 */
+	public function data()
+	{
+		return get_object_vars($this);
 	}
 
 	public function render()
@@ -127,25 +179,26 @@ abstract class Forma_Field_Core
 			'field' => $this,
 			'label' => $this->render_label(),
 			'input' => $this->render_input(),
-		));
+		))->render();
 	}
 
 	public function render_label()
 	{
 		$file = Forma_Field::get_view_file('label', get_class($this));
 
-		return View::factory($file, array('field' => $this));
+		return View::factory($file, array('field' => $this))->render();
 	}
 
 	public function render_input()
 	{
 		$file = Forma_Field::get_view_file('input', get_class($this));
 
-		return View::factory($file, array('field' => $this));
+		return View::factory($file, array('field' => $this))->render();
 	}
 
 	protected static function get_view_file($name, $class_name, $directory = 'forma/field')
 	{
+		// @todo: More robust view hierarchy to allow overrides on a per-form.
 		$path = $directory;
 		$subdir = str_replace('forma_field_', '', strtolower($class_name));
 

@@ -8,7 +8,12 @@ abstract class Forma_Field_Select_Core extends Forma_Field
 	{
 		parent::__construct($name, $options);
 
-		$this->rules += array('in_array' => array($this->options));
+		if ( ! $this->required)
+		{
+			Arr::unshift($this->options, '', '');
+		}
+
+		$this->rules += array('in_array' => array(array_keys($this->options)));
 	}
 	
 	public function set($value)
@@ -20,6 +25,6 @@ abstract class Forma_Field_Select_Core extends Forma_Field
 
 	public function get()
 	{
-		return $this->value === null ? null : (string) $this->value;
+		return array_key_exists($this->value, $this->options) ? $this->value : null;
 	}
 }

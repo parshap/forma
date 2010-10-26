@@ -10,8 +10,10 @@
 	<?php endif; ?>
 
 	<?php foreach ($form->fields() as $field) : ?>
-		<?php echo $field->render() ?>
+		<?php echo $form->render($field->name) ?>
 	<?php endforeach; ?>
 
 	<?php echo Form::submit(NULL, __('Submit')) ?>
 <?php echo Form::close() ?>
+
+<?php echo $script ?>

@@ -13,6 +13,11 @@ abstract class Forma_Field_File_Core extends Forma_Field
 		{
 			$this->rules += array('Upload::not_empty' => null);
 		}
+
+		if ($this->types)
+		{
+			$this->rules += array('Upload::type' => array($this->types));
+		}
 	}
 
 	protected function load($path)

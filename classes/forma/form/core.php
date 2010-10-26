@@ -3,26 +3,45 @@
 abstract class Forma_Form_Core
 {
 	/**
-	 * @var array List of fields the form has.
-	 */
-	private $_fields = array();
-	
-	/**
 	 * @var string The URI to use for the form's action.
 	 */
-	public $action = null;
+	public $action;
 
-	public $attributes = array('class' => 'forma');
+	public $attributes = array(
+		'id' => null,
+		'class' => 'forma',
+	);
 
 	public $errors = array();
 
-	private $_saved = true;
+	public $name;
 
-	private $_changed = array();
+	/**
+	 * @var array List of fields the form has.
+	 */
+	protected $_fields = array();
+
+	protected $_saved = true;
+
+	protected $_changed = array();
+
+	protected $_pending_dependencies = array();
+
+	public static function initialize($form)
+	{
+	}
 
 	public function __construct($values = array())
 	{
+		$this->name = get_class($this);
+
 		call_user_func(array(get_class($this), 'initialize'), $this);
+
+		// If no ID was given, generate one.
+		if ( ! $this->attributes['id'] )
+		{
+			$this->attributes['id'] = Forma::uniqid();
+		}
 
 		if ($values)
 		{
@@ -84,6 +103,22 @@ abstract class Forma_Form_Core
 	}
 
 	/**
+	 * Returns an associative array of field names and field values.
+	 * @return array
+	 */
+	public function values()
+	{
+		$values = array();
+
+		foreach($this->fields() as $field)
+		{
+			$values[$field->name] = $field->get();
+		}
+
+		return $values;
+	}
+
+	/**
 	 * Sets the values of form fields.
 	 * @param mixed $values array of field value pairs or the name of the field
 	 * @param string $value
@@ -94,6 +129,8 @@ abstract class Forma_Form_Core
 		{
 			$values = array($values => $value);
 		}
+
+		$changed = false;
 
 		foreach($values as $key => $value)
 		{
@@ -114,6 +151,18 @@ abstract class Forma_Form_Core
 				continue;
 			}
 
+			// If this field's dependencies are not met, save the the value (in
+			// case dependencies are met in the future) and skip it.
+			if ( ! $field->depends($this->values()))
+			{
+				$this->_pending_dependencies[$field->name] = $value;
+				continue;
+			}
+
+			// Since this field's value is getting updated, we no longer care
+			// about any previous dependencies-pending values.
+			unset($this->_pending_dependencies[$field->name]);
+
 			$old_value = $field->get();
 			$new_value = $field->set($value);
 
@@ -123,9 +172,30 @@ abstract class Forma_Form_Core
 			}
 
 			$this->_changed[$field->name] = $field->value;
-
-			$this->_saved = false;
+			$this->_saved = ! $changed = true;
 		}
+
+		// Since the form's state has changed, re-evaluate dependencies.
+		if ($changed)
+		{
+			$this->_evaluate_dependencies();
+		}
+	}
+
+	protected function _evaluate_dependencies()
+	{
+		// Unset any fields that do not meet dependancies.
+		foreach($this->fields() as $field)
+		{
+			if ( ! $field->depends($this->values()))
+			{
+				$this->_pending_dependencies[$field->name] = $field->value;
+				// @todo: $this->unset() ?
+				$this->set(null);
+			}
+		}
+
+		$this->set($this->_pending_dependencies);
 	}
 
 	/**
@@ -136,8 +206,16 @@ abstract class Forma_Form_Core
 		$check = true;
 		$data = Validate::factory($this->_changed);
 
+		// Validate each of the form's fields.
 		foreach ($this->fields() as $field)
 		{
+			// If this field does not meet its dependencies, we do not need to
+			// validate it.
+			if ( ! $field->depends($this->values()))
+			{
+				continue;
+			}
+
 			$check = $field->check($data) && $check;
 			$data->label($field->name, $field->label);
 		}
@@ -152,32 +230,78 @@ abstract class Forma_Form_Core
 		return $check;
 	}
 
-	public function render()
+	/**
+	 * Returns the meta data associated with this form as primitive arrays
+	 * (intended for use with json_encode).
+	 */
+	public function data()
 	{
-		$view_file = $this->get_view_file();
-
-		return View::factory($view_file, array('form' => $this));
-	}
-
-	protected function get_view_file($class_name = NULL)
-	{
-		if($class_name === NULL)
-		{
-			$class_name = get_class($this);
-		}
-
-		$view_name = str_replace(
-			array('forma_', 'form_'),
-			array('', ''),
-			strtolower($class_name)
+		// Initialize the data array.
+		$d = array(
+			'fields' => array(),
 		);
 
-		$view_file = 'forma/form/' . $view_name;
+		foreach ($this->fields() as $field)
+		{
+			$d['fields'][$field->name] = $field->data();
+		}
+
+		return $d;
+	}
+
+	/**
+	 * Used to render the form. If no parameters are passed, the entire form
+	 * is rendered. If any parameters are passed they will be used as the names
+	 * of the fields to render.
+	 */
+	public function render($field = null)
+	{
+		// No parameters are passed - render the form.
+		if (func_num_args() === 0)
+		{
+			return View::factory(
+				$this->_get_view_file(),
+				array('form' => $this, 'script' => $this->render_script())
+			);
+		}
+
+		$output = array();
+		for ($i = 0; $i < func_num_args(); $i++)
+		{
+			// @todo: throw exception if invalid field - hard to debug otherwise
+			$output[] = $this->fields(func_get_arg($i))->render();
+		}
+		return implode("\n", $output);
+	}
+
+	public function render_script()
+	{
+		return View::factory('forma/script', array('form' => $this))->render();
+	}
+
+	protected function _get_view_file($class_name = null)
+	{
+		// @todo: allow views in form/ in addition to forma/form/
+		if ( ! $class_name)
+		{
+			$form_name = $this->name;
+			$class_name = get_class($this);
+		}
+		else
+		{
+			$form_name = str_replace(
+				array('forma_form_', 'form_'),
+				array('', ''),
+				strtolower($class_name)
+			);
+		}
+
+		$view_file = 'forma/form/' . $form_name;
 
 		// If we can't find the view file, use the parent's.
 		if ( ! Kohana::find_file('views', $view_file) && $class_name !== __CLASS__)
 		{
-			return $this->get_view_file(get_parent_class($class_name));
+			return $this->_get_view_file(get_parent_class($class_name));
 		}
 
 		return $view_file;
