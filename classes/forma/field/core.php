@@ -43,6 +43,8 @@ abstract class Forma_Field_Core
 
 	public $required = true;
 
+	public $hide_label = false;
+
 	/*
 	 * @var mixed The limit of this field being repeated. Can be a number or
 	 * '+' for "1 or more".
