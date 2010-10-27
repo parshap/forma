@@ -224,7 +224,7 @@ abstract class Forma_Form_Core
 
 		if ( ! $check)
 		{
-			$this->errors = $data->errors('form/' . Forma::form_name($this));
+			$this->errors = $data->errors('forma/' . Forma::form_name($this));
 		}
 
 		return $check;
