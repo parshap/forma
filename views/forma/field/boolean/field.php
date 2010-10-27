@@ -4,7 +4,7 @@
 	</div>
 
 	<div class="forma-input">
-		<?php echo Form::input($field->name, $field->value, $field->attributes) ?>
+		<?php echo Form::checkbox($field->name, null, $field->get(), $field->attributes) ?>
 	</div>
 </div>
 
