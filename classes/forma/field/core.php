@@ -115,11 +115,26 @@ abstract class Forma_Field_Core
 			return ! $this->is_invalid = false;
 		}
 
+		// If this field's value was not passed, perform validation manually.
+		if ( ! isset($data[$this->name]))
+		{
+			if ( ! isset($this->rules['not_empty']))
+			{
+				// This field can be empty, no validation errors.
+				return ! $this->is_invalid = false;
+			}
+			else
+			{
+				// This field cannot be empty, add the error.
+				$data->error($this->name, 'not_empty');
+				return ! $this->is_invalid = true;
+			}
+		}
+
 		// Create a local Validate object and perform validation.
 		$validate = Validate::factory(Arr::extract($data, array($this->name)));
 		$validate->rules($this->name, $this->rules);
 		$this->is_invalid = ! $validate->check();
-
 
 		// Add any errors to the form's validate object.
 		foreach($validate->errors() as $field => $value)
