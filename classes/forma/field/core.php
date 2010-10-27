@@ -115,20 +115,11 @@ abstract class Forma_Field_Core
 			return ! $this->is_invalid = false;
 		}
 
-		// If this field's value was not passed, perform validation manually.
+		// If this field's value is not set, set it to null so that validation
+		// can do its job.
 		if ( ! isset($data[$this->name]))
 		{
-			if ( ! isset($this->rules['not_empty']))
-			{
-				// This field can be empty, no validation errors.
-				return ! $this->is_invalid = false;
-			}
-			else
-			{
-				// This field cannot be empty, add the error.
-				$data->error($this->name, 'not_empty');
-				return ! $this->is_invalid = true;
-			}
+			$data[$this->name] = null;
 		}
 
 		// Create a local Validate object and perform validation.
