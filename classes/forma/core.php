@@ -19,6 +19,11 @@ abstract class Forma_Core
 
 	public static function form_name($form)
 	{
+		if ( $form->name )
+		{
+			return $form->name;
+		}
+
 		if ($form instanceof Forma_Form)
 		{
 			$form = get_class($form);
