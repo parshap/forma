@@ -3,13 +3,13 @@
 		<?php echo $label ?>
 	</div>
 
-	<div class="forma-input">
-		<?php echo $input ?>
-	</div>
-	
 	<div class="forma-extra">
 		<?php if (isset($field->rules['max_words'])) : ?>
 			<?= reset($field->rules['max_words']) ?> words max
 		<?php endif; ?>
+	</div>
+
+	<div class="forma-input">
+		<?php echo $input ?>
 	</div>
 </div>
