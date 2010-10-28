@@ -52,6 +52,11 @@ abstract class Forma_Field_Core
 	 */
 	public $limit = 1;
 
+	/*
+	 * @var string Extra text to be displayed for the field.
+	 */
+	public $extra = '';
+
 	/**
 	 * Creates and initializes the form field.
 	 */
