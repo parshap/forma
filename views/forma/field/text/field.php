@@ -4,8 +4,9 @@
 	</div>
 
 	<div class="forma-extra">
+		<?= $field->extra ?>
 		<?php if (isset($field->rules['max_words'])) : ?>
-			<?= reset($field->rules['max_words']) ?> words max
+			<?= reset($field->rules['max_words']) ?> words max.
 		<?php endif; ?>
 	</div>
 
