@@ -204,7 +204,7 @@ abstract class Forma_Form_Core
 	public function check()
 	{
 		$check = true;
-		$data = Validate::factory($this->_changed);
+		$data = Validation::factory($this->_changed);
 
 		// Validate each of the form's fields.
 		foreach ($this->fields() as $field)

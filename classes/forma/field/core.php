@@ -112,8 +112,10 @@ abstract class Forma_Field_Core
 		return $this->get();
 	}
 
-	public function check($data)
+	public function check($form_validation)
 	{
+		$data = $form_validation->as_array();
+
 		// If there are no validation rules then we pass!
 		if( ! $this->rules)
 		{
@@ -127,16 +129,28 @@ abstract class Forma_Field_Core
 			$data[$this->name] = null;
 		}
 
-		// Create a local Validate object and perform validation.
-		$validate = Validate::factory(Arr::extract($data, array($this->name)));
-		$validate->rules($this->name, $this->rules);
-		$this->is_invalid = ! $validate->check();
+		// Create a local Validation object
+		$validation = Validation::factory(Arr::extract($data, array($this->name)));
 
-		// Add any errors to the form's validate object.
-		foreach($validate->errors() as $field => $value)
+		// Add rules
+		foreach ($this->rules as $rule => $params)
+		{
+			if ($params)
+			{
+				$params = array_merge(array(':value'), $params);
+			}
+
+			$validation->rule($this->name, $rule, $params);
+		}
+
+		// Perform validation
+		$this->is_invalid = ! $validation->check();
+
+		// Add any errors to the form's validation object.
+		foreach($validation->errors() as $field => $value)
 		{
 			list($error, $params) = $value;
-			$data->error($field, $error, $params);
+			$form_validation->error($field, $error, $params);
 		}
 
 		return ! $this->is_invalid;
